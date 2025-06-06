@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The GenX Edit - Word Find Generator</title>
+    <style>
+        :root {
+            --primary-color: #8e44ad;
+            --secondary-color: #f39c12;
+            --background-color: #f5f5f5;
+            --text-color: #333333;
+            --border-color: #dddddd;
+            --hover-color: #7d3c98;
+            --grid-color: #8e44ad;
+            --selected-color: #f39c12;
+            --found-color: #2ecc71;
+            --font-family: 'Arial', sans-serif;
+        }
+
+        /* Retro 90s theme */
+        .theme-retro90s {
+            --primary-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --background-color: #f7f7f7;
+            --text-color: #333333;
+            --border-color: #ff6b6b;
+            --hover-color: #ff5252;
+            --grid-color: #ff6b6b;
+            --selected-color: #4ecdc4;
+            --found-color: #2ecc71;
+            --font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+        }
+
+        /* 80s theme */
+        .theme-80s {
+            --primary-color: #ff00ff;
+            --secondary-color: #00ffff;
+            --background-color: #000000;
+            --text-color: #ffffff;
+            --border-color: #ff00ff;
+            --hover-color: #cc00cc;
+            --grid-color: #ff00ff;
+            --selected-color: #00ffff;
+            --found-color: #00ff00;
+            --font-family: 'VT323', monospace;
+        }
+
+        /* Conservative business theme */
+        .theme-business {
+            --primary-color: #003366;
+            --secondary-color: #336699;
+            --background-color: #f9f9f9;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --hover-color: #002244;
+            --grid-color: #003366;
+            --selected-color: #336699;
+            --found-color: #006633;
+            --font-family: 'Georgia', serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .word-find-widget {
+            background-color: var(--background-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .word-find-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .word-find-content {
+            padding: 20px;
+        }
+
+        .word-find-grid-container {
+            width: 100%;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .word-find-grid {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 2px;
+            margin: 0 auto;
+            user-select: none;
+            touch-action: none;
+            position: relative;
+        }
+
+        .grid-cell {
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            font-size: 1.2em;
+            text-transform: uppercase;
+        }
+
+        .grid-cell.selected {
+            background-color: var(--selected-color);
+            color: white;
+        }
+
+        .grid-cell.found {
+            background-color: var(--found-color);
+            color: white;
+        }
+
+        .word-list-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .word-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .word-list-item {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            position: relative;
+            background-color: white;
+            text-align: center;
+        }
+
+        .word-list-item.found {
+            text-decoration: line-through;
+            color: var(--found-color);
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+
+        .selection-line {
+            position: absolute;
+            background-color: var(--selected-color);
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .found-line {
+            position: absolute;
+            background-color: var(--found-color);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .word-find-footer {
+            padding: 15px 20px;
+            text-align: right;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .word-find-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+
+        .word-find-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .word-find-message {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* Customizer styles */
+        .customizer {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .customizer h3 {
+            margin-top: 0;
+            color: var(--text-color);
+        }
+
+        .customizer-section {
+            margin-bottom: 15px;
+        }
+
+        .customizer-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .customizer-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .color-picker {
+            width: 100%;
+            height: 40px;
+            padding: 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .theme-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .theme-button {
+            padding: 8px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .theme-button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .theme-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .export-button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .export-button:hover {
+            opacity: 0.9;
+        }
+
+        .code-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .code-box {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .copy-button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            float: right;
+        }
+
+        .copy-button:hover {
+            background-color: #333;
+        }
+
+        .grid-size-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .grid-size-button {
+            padding: 8px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .grid-size-button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .grid-size-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .word-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .word-category {
+            padding: 8px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .word-category:hover {
+            background-color: #f0f0f0;
+        }
+
+        .word-category.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .completion-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--found-color);
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .word-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .word-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-cell {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="customizer">
+            <h3>Word Find Generator</h3>
+            
+            <div class="customizer-section">
+                <label class="customizer-label">Choose a Theme:</label>
+                <div class="theme-buttons">
+                    <button class="theme-button active" data-theme="default">Default</button>
+                    <button class="theme-button" data-theme="retro90s">90s Style</button>
+                    <button class="theme-button" data-theme="80s">80s Neon</button>
+                    <button class="theme-button" data-theme="business">Conservative Business</button>
+                </div>
+            </div>
+            
+            <div class="customizer-section">
+                <label class="customizer-label">Puzzle Title:</label>
+                <input type="text" id="puzzle-title" class="customizer-input" value="The GenX Edit: Word Find of the Week">
+            </div>
+            
+            <div class="customizer-section">
+                <label class="customizer-label">Grid Size:</label>
+                <div class="grid-size-buttons">
+                    <button class="grid-size-button" data-size="10">10×10</button>
+                    <button class="grid-size-button active" data-size="15">15×15</button>
+                    <button class="grid-size-button" data-size="20">20×20</button>
+                </div>
+            </div>
+            
+            <div class="customizer-section">
+                <label class="customizer-label">Word Categories:</label>
+                <div class="word-categories">
+                    <button class="word-category active" data-category="90s-music">90s Music</button>
+                    <button class="word-category" data-category="80s-movies">80s Movies</button>
+                    <button class="word-category" data-category="90s-tv">90s TV Shows</button>
+                    <button class="word-category" data-category="retro-tech">Retro Tech</button>
+                    <button class="word-category" data-category="90s-slang">90s Slang</button>
+                </div>
+            </div>
+            
+            <div class="customizer-section">
+                <label class="customizer-label">Custom Words (one per line):</label>
+                <textarea id="custom-words" class="customizer-input" rows="6" placeholder="Enter your own words here, one per line. Leave empty to use the selected category."></textarea>
+            </div>
+            
+            <div class="customizer-section">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="include-diagonals" checked>
+                    <label for="include-diagonals">Include diagonal words</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="include-backwards" checked>
+                    <label for="include-backwards">Include backwards words</label>
+                </div>
+            </div>
+            
+            <button id="generate-puzzle" class="word-find-button">Generate New Puzzle</button>
+            
+            <div class="export-section">
+                <button id="export-image" class="export-button">Export as Image</button>
+                <button id="export-pdf" class="export-button">Export as PDF</button>
+                <button id="print-puzzle" class="export-button">Print Puzzle</button>
+            </div>
+            
+            <div class="code-section">
+                <label class="customizer-label">Embed Code:</label>
+                <div class="code-box" id="embed-code">
+                    <!-- Embed code will be generated here -->
+                </div>
+                <button id="copy-code" class="copy-button">Copy Code</button>
+            </div>
+        </div>
+        
+        <div class="word-find-widget" id="genx-word-find">
+            <div class="word-find-header" id="word-find-header">The GenX Edit: Word Find of the Week</div>
+            <div class="word-find-content">
+                <div class="word-find-grid-container">
+                    <div class="word-find-grid" id="word-find-grid">
+                        <!-- Grid will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="word-list-container">
+                    <h3>Find These Words:</h3>
+                    <ul class="word-list" id="word-list">
+                        <!-- Word list will be generated here -->
+                    </ul>
+                </div>
+                
+                <div class="completion-message" id="completion-message">
+                    Congratulations! You found all the words!
+                </div>
+            </div>
+            <div class="word-find-footer">
+                <div class="word-find-message" id="word-find-message"></div>
+                <button id="reset-puzzle" class="word-find-button">Reset Puzzle</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Word categories
+        const wordCategories = {
+            '90s-music': [
+                'NIRVANA', 'TUPAC', 'SPICE', 'ALANIS', 'OASIS', 'PEARL', 'BIGGIE', 'BRITNEY', 
+                'BACKSTREET', 'NSYNC', 'TLC', 'RADIOHEAD', 'BLUR', 'BJORK', 'MARIAH', 'WHITNEY', 
+                'MADONNA', 'METALLICA', 'SNOOP', 'EMINEM'
+            ],
+            '80s-movies': [
+                'GOONIES', 'GHOSTBUSTERS', 'TERMINATOR', 'ALIENS', 'RAMBO', 'ROBOCOP', 'PREDATOR',
+                'BEETLEJUICE', 'FERRIS', 'BREAKFAST', 'SIXTEEN', 'FOOTLOOSE', 'KARATE', 'EMPIRE',
+                'INDIANA', 'BLADE', 'TRON', 'GREMLINS', 'LABYRINTH', 'POLTERGEIST'
+            ],
+            '90s-tv': [
+                'FRIENDS', 'SEINFELD', 'SIMPSONS', 'XFILES', 'BUFFY', 'FRASIER', 'FRESH', 'SAVED',
+                'DAWSON', 'CHARMED', 'MELROSE', 'BAYWATCH', 'ROSEANNE', 'CHEERS', 'TWIN', 'HOMICIDE',
+                'NYPD', 'MARTIN', 'LIVING', 'DINOSAURS'
+            ],
+            'retro-tech': [
+                'WALKMAN', 'GAMEBOY', 'NINTENDO', 'ATARI', 'PAGER', 'DISCMAN', 'POLAROID', 'VHS',
+                'BETAMAX', 'CASSETTE', 'FLOPPY', 'DIALUP', 'MODEM', 'TAMAGOTCHI', 'FURBY', 'BOOMBOX',
+                'CAMCORDER', 'TETRIS', 'PACMAN', 'JOYSTICK'
+            ],
+            '90s-slang': [
+                'WHATEVER', 'PSYCH', 'TALK', 'HAND', 'HOMIE', 'PHAT', 'FRESH', 'TIGHT', 'SWEET',
+                'DUDE', 'WASSUP', 'BLING', 'CHILL', 'DAWG', 'AIIGHT', 'WORD', 'SCRUB', 'HOTTIE',
+                'BUGGIN', 'BOUNCE'
+            ]
+        };
+
+        // DOM elements
+        const wordFindHeader = document.getElementById('word-find-header');
+        const wordFindGrid = document.getElementById('word-find-grid');
+        const wordList = document.getElementById('word-list');
+        const wordFindMessage = document.getElementById('word-find-message');
+        const resetPuzzleButton = document.getElementById('reset-puzzle');
+        const completionMessage = document.getElementById('completion-message');
+        const wordFindWidget = document.getElementById('genx-word-find');
+
+        // Customizer elements
+        const puzzleTitleInput = document.getElementById('puzzle-title');
+        const customWordsInput = document.getElementById('custom-words');
+        const includeDiagonalsCheckbox = document.getElementById('include-diagonals');
+        const includeBackwardsCheckbox = document.getElementById('include-backwards');
+        const generatePuzzleButton = document.getElementById('generate-puzzle');
+        const exportImageButton = document.getElementById('export-image');
+        const exportPdfButton = document.getElementById('export-pdf');
+        const printPuzzleButton = document.getElementById('print-puzzle');
+        const embedCodeBox = document.getElementById('embed-code');
+        const copyCodeButton = document.getElementById('copy-code');
+        const themeButtons = document.querySelectorAll('.theme-button');
+        const gridSizeButtons = document.querySelectorAll('.grid-size-button');
+        const wordCategoryButtons = document.querySelectorAll('.word-category');
+
+        // Puzzle data
+        let puzzleData = {
+            title: "The GenX Edit: Word Find of the Week",
+            gridSize: 15,
+            words: [],
+            grid: [],
+            placedWords: [],
+            foundWords: [],
+            selectedCells: [],
+            selectionStart: null,
+            selectionEnd: null,
+            isSelecting: false,
+            wordCategory: '90s-music',
+            includeDiagonals: true,
+            includeBackwards: true
+        };
+
+        // Initialize the puzzle
+        function initPuzzle() {
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Generate initial puzzle
+            generatePuzzle();
+            
+            // Update embed code
+            updateEmbedCode();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Theme buttons
+            themeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    applyTheme(button.dataset.theme);
+                    
+                    // Update active button
+                    themeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                });
+            });
+            
+            // Grid size buttons
+            gridSizeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    puzzleData.gridSize = parseInt(button.dataset.size);
+                    
+                    // Update active button
+                    gridSizeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Regenerate puzzle
+                    generatePuzzle();
+                });
+            });
+            
+            // Word category buttons
+            wordCategoryButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    puzzleData.wordCategory = button.dataset.category;
+                    
+                    // Update active button
+                    wordCategoryButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Regenerate puzzle
+                    generatePuzzle();
+                });
+            });
+            
+            // Generate puzzle button
+            generatePuzzleButton.addEventListener('click', generatePuzzle);
+            
+            // Reset puzzle button
+            resetPuzzleButton.addEventListener('click', resetPuzzle);
+            
+            // Export buttons
+            exportImageButton.addEventListener('click', exportAsImage);
+            exportPdfButton.addEventListener('click', exportAsPdf);
+            printPuzzleButton.addEventListener('click', printPuzzle);
+            
+            // Copy embed code button
+            copyCodeButton.addEventListener('click', copyEmbedCode);
+        }
+
+        // Generate a new puzzle
+        function generatePuzzle() {
+            // Update puzzle title
+            puzzleData.title = puzzleTitleInput.value;
+            wordFindHeader.textContent = puzzleData.title;
+            
+            // Update diagonal and backwards settings
+            puzzleData.includeDiagonals = includeDiagonalsCheckbox.checked;
+            puzzleData.includeBackwards = includeBackwardsCheckbox.checked;
+            
+            // Get words from custom input or selected category
+            const customWords = customWordsInput.value.trim().split('\n').filter(word => word.trim() !== '');
+            puzzleData.words = customWords.length > 0 ? customWords : wordCategories[puzzleData.wordCategory];
+            
+            // Limit to 15 words maximum
+            puzzleData.words = puzzleData.words.slice(0, 15).map(word => word.toUpperCase());
+            
+            // Reset puzzle state
+            puzzleData.grid = [];
+            puzzleData.placedWords = [];
+            puzzleData.foundWords = [];
+            puzzleData.selectedCells = [];
+            puzzleData.selectionStart = null;
+            puzzleData.selectionEnd = null;
+            puzzleData.isSelecting = false;
+            
+            // Create empty grid
+            for (let i = 0; i < puzzleData.gridSize; i++) {
+                puzzleData.grid[i] = [];
+                for (let j = 0; j < puzzleData.gridSize; j++) {
+                    puzzleData.grid[i][j] = '';
+                }
+            }
+            
+            // Place words in grid
+            placeWordsInGrid();
+            
+            // Fill empty cells with random letters
+            fillEmptyCells();
+            
+            // Render the puzzle
+            renderPuzzle();
+            
+            // Update embed code
+            updateEmbedCode();
+            
+            // Hide completion message
+            completionMessage.style.display = 'none';
+        }
+
+        // Place words in the grid
+        function placeWordsInGrid() {
+            // Shuffle words to randomize placement
+            const shuffledWords = [...puzzleData.words].sort(() => Math.random() - 0.5);
+            
+            // Try to place each word
+            shuffledWords.forEach(word => {
+                if (placeWord(word)) {
+                    puzzleData.placedWords.push(word);
+                }
+            });
+        }
+
+        // Place a single word in the grid
+        function placeWord(word) {
+            // Define possible directions
+            const directions = [];
+            
+            // Horizontal and vertical
+            directions.push({x: 1, y: 0}); // right
+            directions.push({x: 0, y: 1}); // down
+            
+            // Diagonal if enabled
+            if (puzzleData.includeDiagonals) {
+                directions.push({x: 1, y: 1}); // down-right
+                directions.push({x: 1, y: -1}); // up-right
+            }
+            
+            // Backwards if enabled
+            if (puzzleData.includeBackwards) {
+                directions.push({x: -1, y: 0}); // left
+                directions.push({x: 0, y: -1}); // up
+                
+                if (puzzleData.includeDiagonals) {
+                    directions.push({x: -1, y: -1}); // up-left
+                    directions.push({x: -1, y: 1}); // down-left
+                }
+            }
+            
+            // Shuffle directions to randomize placement
+            const shuffledDirections = [...directions].sort(() => Math.random() - 0.5);
+            
+            // Try each direction
+            for (const dir of shuffledDirections) {
+                // Try 100 random starting positions
+                for (let attempt = 0; attempt < 100; attempt++) {
+                    const startX = Math.floor(Math.random() * puzzleData.gridSize);
+                    const startY = Math.floor(Math.random() * puzzleData.gridSize);
+                    
+                    // Check if word fits at this position and direction
+                    if (wordFitsAt(word, startX, startY, dir)) {
+                        // Place the word
+                        for (let i = 0; i < word.length; i++) {
+                            const x = startX + i * dir.x;
+                            const y = startY + i * dir.y;
+                            puzzleData.grid[y][x] = word[i];
+                        }
+                        
+                        // Save word placement info
+                        puzzleData.placedWords.push({
+                            word,
+                            startX,
+                            startY,
+                            endX: startX + (word.length - 1) * dir.x,
+                            endY: startY + (word.length - 1) * dir.y,
+                            direction: dir
+                        });
+                        
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        // Check if a word fits at a specific position and direction
+        function wordFitsAt(word, startX, startY, direction) {
+            const endX = startX + (word.length - 1) * direction.x;
+            const endY = startY + (word.length - 1) * direction.y;
+            
+            // Check if word is within grid boundaries
+            if (
+                endX < 0 || endX >= puzzleData.gridSize ||
+                endY < 0 || endY >= puzzleData.gridSize
+            ) {
+                return false;
+            }
+            
+            // Check if word overlaps with existing letters
+            for (let i = 0; i < word.length; i++) {
+                const x = startX + i * direction.x;
+                const y = startY + i * direction.y;
+                
+                // If cell is not empty, it must match the current letter
+                if (puzzleData.grid[y][x] !== '' && puzzleData.grid[y][x] !== word[i]) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        // Fill empty cells with random letters
+        function fillEmptyCells() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            for (let y = 0; y < puzzleData.gridSize; y++) {
+                for (let x = 0; x < puzzleData.gridSize; x++) {
+                    if (puzzleData.grid[y][x] === '') {
+                        const randomIndex = Math.floor(Math.random() * letters.length);
+                        puzzleData.grid[y][x] = letters[randomIndex];
+                    }
+                }
+            }
+        }
+
+        // Render the puzzle
+        function renderPuzzle() {
+            // Clear grid and word list
+            wordFindGrid.innerHTML = '';
+            wordList.innerHTML = '';
+            
+            // Set grid template columns
+            wordFindGrid.style.gridTemplateColumns = `repeat(${puzzleData.gridSize}, 1fr)`;
+            
+            // Create grid cells
+            for (let y = 0; y < puzzleData.gridSize; y++) {
+                for (let x = 0; x < puzzleData.gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.textContent = puzzleData.grid[y][x];
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    // Add event listeners for selection
+                    cell.addEventListener('mousedown', startSelection);
+                    cell.addEventListener('mouseover', updateSelection);
+                    cell.addEventListener('mouseup', endSelection);
+                    
+                    // Touch events
+                    cell.addEventListener('touchstart', handleTouchStart);
+                    cell.addEventListener('touchmove', handleTouchMove);
+                    cell.addEventListener('touchend', handleTouchEnd);
+                    
+                    wordFindGrid.appendChild(cell);
+                }
+            }
+            
+            // Create word list
+            puzzleData.words.forEach(word => {
+                const listItem = document.createElement('li');
+                listItem.className = 'word-list-item';
+                listItem.textContent = word;
+                listItem.dataset.word = word;
+                
+                // Mark as found if already found
+                if (puzzleData.foundWords.includes(word)) {
+                    listItem.classList.add('found');
+                }
+                
+                wordList.appendChild(listItem);
+            });
+            
+            // Add found lines
+            drawFoundWordLines();
+        }
+
+        // Start word selection
+        function startSelection(event) {
+            // Prevent default behavior
+            event.preventDefault();
+            
+            // Get cell coordinates
+            const x = parseInt(this.dataset.x);
+            const y = parseInt(this.dataset.y);
+            
+            // Start selection
+            puzzleData.isSelecting = true;
+            puzzleData.selectionStart = {x, y};
+            puzzleData.selectionEnd = {x, y};
+            puzzleData.selectedCells = [{x, y}];
+            
+            // Update UI
+            updateSelectionUI();
+        }
+
+        // Update word selection
+        function updateSelection(event) {
+            // Only update if selecting
+            if (!puzzleData.isSelecting) return;
+            
+            // Get cell coordinates
+            const x = parseInt(this.dataset.x);
+            const y = parseInt(this.dataset.y);
+            
+            // Update selection end
+            puzzleData.selectionEnd = {x, y};
+            
+            // Calculate selected cells
+            calculateSelectedCells();
+            
+            // Update UI
+            updateSelectionUI();
+        }
+
+        // End word selection
+        function endSelection() {
+            // Only process if selecting
+            if (!puzzleData.isSelecting) return;
+            
+            // End selection
+            puzzleData.isSelecting = false;
+            
+            // Check if a word was found
+            checkForWord();
+            
+            // Clear selection
+            puzzleData.selectedCells = [];
+            puzzleData.selectionStart = null;
+            puzzleData.selectionEnd = null;
+            
+            // Update UI
+            updateSelectionUI();
+            
+            // Check if all words are found
+            checkCompletion();
+        }
+
+        // Handle touch start
+        function handleTouchStart(event) {
+            // Prevent scrolling
+            event.preventDefault();
+            
+            // Get touch coordinates
+            const touch = event.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('grid-cell')) {
+                // Get cell coordinates
+                const x = parseInt(element.dataset.x);
+                const y = parseInt(element.dataset.y);
+                
+                // Start selection
+                puzzleData.isSelecting = true;
+                puzzleData.selectionStart = {x, y};
+                puzzleData.selectionEnd = {x, y};
+                puzzleData.selectedCells = [{x, y}];
+                
+                // Update UI
+                updateSelectionUI();
+            }
+        }
+
+        // Handle touch move
+        function handleTouchMove(event) {
+            // Only update if selecting
+            if (!puzzleData.isSelecting) return;
+            
+            // Prevent scrolling
+            event.preventDefault();
+            
+            // Get touch coordinates
+            const touch = event.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('grid-cell')) {
+                // Get cell coordinates
+                const x = parseInt(element.dataset.x);
+                const y = parseInt(element.dataset.y);
+                
+                // Update selection end
+                puzzleData.selectionEnd = {x, y};
+                
+                // Calculate selected cells
+                calculateSelectedCells();
+                
+                // Update UI
+                updateSelectionUI();
+            }
+        }
+
+        // Handle touch end
+        function handleTouchEnd(event) {
+            // Only process if selecting
+            if (!puzzleData.isSelecting) return;
+            
+            // End selection
+            puzzleData.isSelecting = false;
+            
+            // Check if a word was found
+            checkForWord();
+            
+            // Clear selection
+            puzzleData.selectedCells = [];
+            puzzleData.selectionStart = null;
+            puzzleData.selectionEnd = null;
+            
+            // Update UI
+            updateSelectionUI();
+            
+            // Check if all words are found
+            checkCompletion();
+        }
+
+        // Calculate selected cells based on start and end points
+        function calculateSelectedCells() {
+            // Clear selected cells
+            puzzleData.selectedCells = [];
+            
+            // Get start and end points
+            const start = puzzleData.selectionStart;
+            const end = puzzleData.selectionEnd;
+            
+            // Calculate direction
+            const dx = Math.sign(end.x - start.x);
+            const dy = Math.sign(end.y - start.y);
+            
+            // Only allow straight lines (horizontal, vertical, diagonal)
+            if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) {
+                // Not a straight line, only select start cell
+                puzzleData.selectedCells = [{x: start.x, y: start.y}];
+                return;
+            }
+            
+            // Calculate distance
+            const distance = Math.max(
+                Math.abs(end.x - start.x),
+                Math.abs(end.y - start.y)
+            );
+            
+            // Add cells along the line
+            for (let i = 0; i <= distance; i++) {
+                const x = start.x + i * dx;
+                const y = start.y + i * dy;
+                puzzleData.selectedCells.push({x, y});
+            }
+        }
+
+        // Update selection UI
+        function updateSelectionUI() {
+            // Remove selection from all cells
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            
+            // Remove existing selection line
+            const existingLine = document.querySelector('.selection-line');
+            if (existingLine) {
+                existingLine.remove();
+            }
+            
+            // Add selection to selected cells
+            puzzleData.selectedCells.forEach(cell => {
+                const element = document.querySelector(`.grid-cell[data-x="${cell.x}"][data-y="${cell.y}"]`);
+                if (element) {
+                    element.classList.add('selected');
+                }
+            });
+            
+            // Draw selection line
+            if (puzzleData.selectionStart && puzzleData.selectionEnd && puzzleData.selectedCells.length > 1) {
+                drawSelectionLine();
+            }
+        }
+
+        // Draw selection line
+        function drawSelectionLine() {
+            // Get start and end cells
+            const startCell = document.querySelector(`.grid-cell[data-x="${puzzleData.selectionStart.x}"][data-y="${puzzleData.selectionStart.y}"]`);
+            const endCell = document.querySelector(`.grid-cell[data-x="${puzzleData.selectionEnd.x}"][data-y="${puzzleData.selectionEnd.y}"]`);
+            
+            if (!startCell || !endCell) return;
+            
+            // Get cell positions
+            const startRect = startCell.getBoundingClientRect();
+            const endRect = endCell.getBoundingClientRect();
+            const gridRect = wordFindGrid.getBoundingClientRect();
+            
+            // Calculate line start and end points
+            const startX = startRect.left + startRect.width / 2 - gridRect.left;
+            const startY = startRect.top + startRect.height / 2 - gridRect.top;
+            const endX = endRect.left + endRect.width / 2 - gridRect.left;
+            const endY = endRect.top + endRect.height / 2 - gridRect.top;
+            
+            // Calculate line length and angle
+            const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+            
+            // Create line element
+            const line = document.createElement('div');
+            line.className = 'selection-line';
+            line.style.width = `${length}px`;
+            line.style.height = '4px';
+            line.style.left = `${startX}px`;
+            line.style.top = `${startY}px`;
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.transformOrigin = '0 0';
+            
+            // Add line to grid
+            wordFindGrid.appendChild(line);
+        }
+
+        // Check if selected cells form a word
+        function checkForWord() {
+            // Get selected letters
+            let selectedWord = '';
+            puzzleData.selectedCells.forEach(cell => {
+                selectedWord += puzzleData.grid[cell.y][cell.x];
+            });
+            
+            // Check if word is in the list
+            const wordIndex = puzzleData.words.findIndex(word => 
+                word === selectedWord || word === selectedWord.split('').reverse().join('')
+            );
+            
+            if (wordIndex !== -1) {
+                const foundWord = puzzleData.words[wordIndex];
+                
+                // Add to found words if not already found
+                if (!puzzleData.foundWords.includes(foundWord)) {
+                    puzzleData.foundWords.push(foundWord);
+                    
+                    // Mark word as found in the list
+                    const wordElement = document.querySelector(`.word-list-item[data-word="${foundWord}"]`);
+                    if (wordElement) {
+                        wordElement.classList.add('found');
+                    }
+                    
+                    // Mark cells as found
+                    puzzleData.selectedCells.forEach(cell => {
+                        const element = document.querySelector(`.grid-cell[data-x="${cell.x}"][data-y="${cell.y}"]`);
+                        if (element) {
+                            element.classList.add('found');
+                        }
+                    });
+                    
+                    // Save found word line
+                    const foundWordLine = {
+                        word: foundWord,
+                        start: puzzleData.selectionStart,
+                        end: puzzleData.selectionEnd
+                    };
+                    
+                    // Draw found word line
+                    drawFoundWordLine(foundWordLine);
+                    
+                    // Show message
+                    wordFindMessage.textContent = `Found: ${foundWord}!`;
+                    setTimeout(() => {
+                        wordFindMessage.textContent = '';
+                    }, 2000);
+                }
+            }
+        }
+
+        // Draw lines for all found words
+        function drawFoundWordLines() {
+            // Remove existing found lines
+            document.querySelectorAll('.found-line').forEach(line => line.remove());
+            
+            // Draw line for each found word
+            puzzleData.foundWords.forEach(word => {
+                // Find word placement
+                const placement = puzzleData.placedWords.find(p => p.word === word);
+                
+                if (placement) {
+                    // Draw line
+                    drawFoundWordLine({
+                        word,
+                        start: {x: placement.startX, y: placement.startY},
+                        end: {x: placement.endX, y: placement.endY}
+                    });
+                }
+            });
+        }
+
+        // Draw line for a found word
+        function drawFoundWordLine(foundWord) {
+            // Get start and end cells
+            const startCell = document.querySelector(`.grid-cell[data-x="${foundWord.start.x}"][data-y="${foundWord.start.y}"]`);
+            const endCell = document.querySelector(`.grid-cell[data-x="${foundWord.end.x}"][data-y="${foundWord.end.y}"]`);
+            
+            if (!startCell || !endCell) return;
+            
+            // Get cell positions
+            const startRect = startCell.getBoundingClientRect();
+            const endRect = endCell.getBoundingClientRect();
+            const gridRect = wordFindGrid.getBoundingClientRect();
+            
+            // Calculate line start and end points
+            const startX = startRect.left + startRect.width / 2 - gridRect.left;
+            const startY = startRect.top + startRect.height / 2 - gridRect.top;
+            const endX = endRect.left + endRect.width / 2 - gridRect.left;
+            const endY = endRect.top + endRect.height / 2 - gridRect.top;
+            
+            // Calculate line length and angle
+            const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+            
+            // Create line element
+            const line = document.createElement('div');
+            line.className = 'found-line';
+            line.style.width = `${length}px`;
+            line.style.height = '4px';
+            line.style.left = `${startX}px`;
+            line.style.top = `${startY}px`;
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.transformOrigin = '0 0';
+            
+            // Add line to grid
+            wordFindGrid.appendChild(line);
+        }
+
+        // Check if all words are found
+        function checkCompletion() {
+            if (puzzleData.foundWords.length === puzzleData.words.length) {
+                // Show completion message
+                completionMessage.style.display = 'block';
+            }
+        }
+
+        // Reset the puzzle
+        function resetPuzzle() {
+            // Clear found words
+            puzzleData.foundWords = [];
+            
+            // Render the puzzle
+            renderPuzzle();
+            
+            // Hide completion message
+            completionMessage.style.display = 'none';
+        }
+
+        // Apply theme
+        function applyTheme(themeName) {
+            // Remove all theme classes
+            wordFindWidget.classList.remove('theme-retro90s', 'theme-80s', 'theme-business');
+            
+            // Add selected theme class
+            if (themeName !== 'default') {
+                wordFindWidget.classList.add(`theme-${themeName}`);
+            }
+        }
+
+        // Export as image
+        function exportAsImage() {
+            // Use html2canvas library (would need to be included)
+            alert('This feature requires the html2canvas library. In a production environment, this would capture the puzzle as an image.');
+        }
+
+        // Export as PDF
+        function exportAsPdf() {
+            // Use jsPDF library (would need to be included)
+            alert('This feature requires the jsPDF library. In a production environment, this would generate a PDF of the puzzle.');
+        }
+
+        // Print puzzle
+        function printPuzzle() {
+            window.print();
+        }
+
+        // Update embed code
+        function updateEmbedCode() {
+            // Create a simplified version of the puzzle for embedding
+            const embedCode = `
+<!-- The GenX Edit Word Find Widget -->
+<div id="genx-word-find-embed" style="max-width: 800px; margin: 0 auto; font-family: Arial, sans-serif;">
+    <div style="background-color: #8e44ad; color: white; padding: 15px; font-weight: bold; border-radius: 8px 8px 0 0;">
+        ${puzzleData.title}
+    </div>
+    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 0 0 8px 8px;">
+        <div style="text-align: center; padding: 20px; background-color: white; border-radius: 4px; margin-bottom: 15px;">
+            [Interactive Word Find Puzzle]
+        </div>
+        <div>
+            <h3>Find These Words:</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                ${puzzleData.words.map(word => `<div style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; background-color: white;">${word}</div>`).join('')}
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #777;">
+        <a href="https://your-newsletter-url.com" style="color: #8e44ad; text-decoration: none;">
+            Play the interactive version in The GenX Edit
+        </a>
+    </div>
+</div>
+<!-- End GenX Edit Word Find Widget -->`;
+            
+            embedCodeBox.textContent = embedCode;
+        }
+
+        // Copy embed code to clipboard
+        function copyEmbedCode() {
+            const textarea = document.createElement('textarea');
+            textarea.value = embedCodeBox.textContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            copyCodeButton.textContent = 'Copied!';
+            setTimeout(() => {
+                copyCodeButton.textContent = 'Copy Code';
+            }, 2000);
+        }
+
+        // Initialize
+        initPuzzle();
+    </script>
+</body>
+</html>
